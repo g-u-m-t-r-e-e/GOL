@@ -220,6 +220,41 @@ input[type="range"], input[type="number"], select {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Specific styling for select to prevent white text/background */
+select {
+    background: linear-gradient(135deg, var(--bg-tertiary), rgba(51, 65, 85, 0.8));
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+select option {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    padding: 8px;
+}
+
+select option:hover, select option:focus {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Fix for browser-specific select styling */
+select::-ms-expand {
+    display: none;
+}
+
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 8px center;
+    background-repeat: no-repeat;
+    background-size: 16px 12px;
+    padding-right: 32px;
+}
+
 input[type="range"] {
     height: 8px;
     padding: 0;
@@ -303,12 +338,14 @@ input[type="number"]:focus, select:focus {
     border-radius: 10px;
     padding: 18px;
     margin: 12px 0;
-    min-height: 70px;
+    min-height: 120px;
+    max-height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
 .lifeform-preview:hover {
@@ -320,16 +357,18 @@ input[type="number"]:focus, select:focus {
     display: grid;
     gap: 1px;
     background: var(--cell-grid);
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .preview-cell {
-    width: 8px;
-    height: 8px;
     background: var(--cell-dead);
+    transition: background-color 0.2s ease;
 }
 
 .preview-cell.alive {
     background: var(--cell-alive);
+    box-shadow: 0 0 3px rgba(16, 185, 129, 0.3);
 }
 
 /* Game Area */
@@ -566,5 +605,232 @@ input[type="number"]:focus, select:focus {
     100% {
         transform: scale(1);
         background: var(--cell-dead);
+    }
+} 
+
+/* Statistics Section - Make prominent */
+.stats-section {
+    background: linear-gradient(135deg, var(--success-color), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    margin-bottom: 25px !important;
+}
+
+.stats-section h3 {
+    color: var(--success-color);
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.stat-item {
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.stat-value {
+    display: block;
+    font-size: 18px;
+    color: var(--success-color);
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Compact Layout Controls */
+.controls-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.control-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 130px;
+    flex: 1;
+}
+
+.control-group-inline label {
+    margin: 0;
+    font-size: 12px;
+    min-width: 65px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.control-group-inline input[type="range"] {
+    flex: 1;
+    min-width: 80px;
+}
+
+.control-group-inline input[type="number"] {
+    width: 85px;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.control-group-inline select {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 120px;
+}
+
+.control-group-inline span {
+    font-size: 11px;
+    color: var(--text-secondary);
+    min-width: 55px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Board & Simulation Section Specific Styling */
+.board-simulation-section .controls-row {
+    margin-bottom: 20px;
+}
+
+.board-simulation-section .size-control {
+    min-width: 160px;
+}
+
+.board-simulation-section .iterations-control {
+    min-width: 140px;
+}
+
+.simulation-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.button-row-1, .button-row-2 {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.button-row-1 {
+    justify-content: space-between;
+}
+
+.button-row-2 {
+    justify-content: space-between;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 11px;
+    flex: 1;
+    max-width: 80px;
+}
+
+.btn-medium {
+    padding: 10px 16px;
+    font-size: 12px;
+    flex: 1;
+}
+
+.btn-small i, .btn-medium i {
+    margin-right: 4px;
+}
+
+/* Legacy button-group for other sections */
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 0;
+    width: 100%;
+}
+
+.button-group .btn {
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Step Controls Compact */
+.step-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.step-controls .btn {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 14px;
+}
+
+/* Compact Panel Sections */
+.panel-section {
+    margin-bottom: 20px;
+    padding: 15px;
+}
+
+.panel-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+}
+
+.control-group {
+    margin-bottom: 12px;
+}
+
+/* Responsive Statistics */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        padding: 8px;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+}
+
+/* Make control panel more compact */
+.control-panel {
+    padding: 20px;
+    max-height: 85vh;
+}
+
+/* Adjust main content for better fit */
+.main-content {
+    gap: 25px;
+    min-height: 600px;
+}
+
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 280px 1fr;
+    }
+    
+    .control-panel {
+        max-height: 75vh;
     }
 } 

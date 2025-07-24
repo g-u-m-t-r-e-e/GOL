@@ -61,13 +61,15 @@ class GameOfLife {
             this.updateCanvasSize();
             this.needsRedraw = true;
             this.renderBoard();
+            // Create new board with the updated size
+            this.createNewBoard();
         });
 
         document.getElementById('new-board').addEventListener('click', () => this.createNewBoard());
         document.getElementById('clear-board').addEventListener('click', () => this.clearBoard());
 
         // Simulation controls
-        document.getElementById('run-simulation').addEventListener('click', () => this.startSimulation());
+        document.getElementById('run-simulation').addEventListener('click', () => this.toggleSimulation());
         document.getElementById('pause-simulation').addEventListener('click', () => this.pauseSimulation());
         document.getElementById('stop-simulation').addEventListener('click', () => this.stopSimulation());
 
@@ -164,20 +166,27 @@ class GameOfLife {
         const previewGrid = document.getElementById('lifeform-preview-grid');
         
         if (!this.selectedLifeform || !this.lifeforms[this.selectedLifeform]) {
-            previewGrid.innerHTML = '<div style="color: var(--text-secondary);">Select a lifeform to preview</div>';
+            previewGrid.innerHTML = '<div style="color: var(--text-secondary); text-align: center;">Select a lifeform to preview</div>';
             return;
         }
 
         const lifeform = this.lifeforms[this.selectedLifeform];
         const layout = lifeform.layout;
         
-        previewGrid.style.gridTemplateColumns = `repeat(${layout[0].length}, 8px)`;
+        // Calculate optimal cell size for preview based on lifeform dimensions
+        const maxPreviewSize = 120; // Maximum preview box size in pixels
+        const maxDimension = Math.max(layout.length, layout[0].length);
+        const cellSize = Math.max(3, Math.min(8, Math.floor(maxPreviewSize / maxDimension)));
+        
+        previewGrid.style.gridTemplateColumns = `repeat(${layout[0].length}, ${cellSize}px)`;
         previewGrid.innerHTML = '';
 
         layout.forEach(row => {
             row.forEach(cell => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = `preview-cell ${cell ? 'alive' : ''}`;
+                cellDiv.style.width = `${cellSize}px`;
+                cellDiv.style.height = `${cellSize}px`;
                 previewGrid.appendChild(cellDiv);
             });
         });
@@ -359,6 +368,20 @@ class GameOfLife {
     async placeLifeform(row, col) {
         if (!this.selectedLifeform) return;
 
+        // Get the lifeform data to check its size
+        const lifeform = this.lifeforms[this.selectedLifeform];
+        if (!lifeform || !lifeform.layout) return;
+
+        // Check if the lifeform fits within the board boundaries
+        const lifeformHeight = lifeform.layout.length;
+        const lifeformWidth = lifeform.layout[0].length;
+        
+        // Ensure the lifeform doesn't go out of bounds
+        if (row + lifeformHeight > this.boardSize || col + lifeformWidth > this.boardSize) {
+            this.showToast(`Not enough space! ${lifeform.name} needs ${lifeformWidth}x${lifeformHeight} cells.`, 'warning');
+            return;
+        }
+
         try {
             const response = await fetch('/api/board/add_lifeform', {
                 method: 'POST',
@@ -369,17 +392,28 @@ class GameOfLife {
                 })
             });
             
-                         const data = await response.json();
-             if (data.status === 'success') {
-                 this.board = data.board;
-                 this.needsRedraw = true;
-                 this.renderBoard();
-                 this.showToast(`${this.lifeforms[this.selectedLifeform].name} placed`, 'success');
-             } else {
-                 this.showToast(data.message, 'error');
-             }
+            const data = await response.json();
+            if (data.status === 'success') {
+                this.board = data.board;
+                this.needsRedraw = true;
+                this.renderBoard();
+                this.showToast(`${this.lifeforms[this.selectedLifeform].name} placed`, 'success');
+            } else {
+                this.showToast(data.message, 'error');
+            }
         } catch (error) {
             this.showToast('Error placing lifeform', 'error');
+        }
+    }
+
+    async toggleSimulation() {
+        // If we have simulation history and we're not at the end, resume
+        if (this.totalSteps > 0 && this.currentStep < this.totalSteps - 1 && !this.isPlaying) {
+            this.playAnimation();
+            this.showToast('Simulation resumed', 'success');
+        } else {
+            // Start new simulation
+            await this.startSimulation();
         }
     }
 
@@ -408,9 +442,11 @@ class GameOfLife {
                 this.showToast('Simulation started', 'success');
             } else {
                 this.showToast(data.message, 'error');
+                this.updateSimulationStatus('Ready');
             }
         } catch (error) {
             this.showToast('Error starting simulation', 'error');
+            this.updateSimulationStatus('Ready');
         }
     }
 
@@ -604,10 +640,23 @@ class GameOfLife {
         const stepForward = document.getElementById('step-forward');
         const stepBackward = document.getElementById('step-backward');
         
-        // Disable controls during API requests to prevent conflicts
-        const isDisabled = this.isRequestInProgress || this.isPlaying;
+        // Update run button text based on state
+        const runIcon = runBtn.querySelector('i');
         
-        runBtn.disabled = this.isPlaying || this.isRequestInProgress;
+        if (this.isPlaying) {
+            runBtn.disabled = true;
+        } else if (this.totalSteps > 0 && this.currentStep < this.totalSteps - 1) {
+            // Has history and not at end - show Resume
+            runBtn.disabled = this.isRequestInProgress;
+            runIcon.className = 'fas fa-play';
+            runBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+        } else {
+            // No history or at end - show Run
+            runBtn.disabled = this.isRequestInProgress;
+            runIcon.className = 'fas fa-play';
+            runBtn.innerHTML = '<i class="fas fa-play"></i> Run';
+        }
+        
         pauseBtn.disabled = !this.isPlaying;
         stopBtn.disabled = (this.totalSteps === 0 && !this.isPlaying) || this.isRequestInProgress;
         stepForward.disabled = this.currentStep >= this.totalSteps - 1 || this.totalSteps === 0 || this.isRequestInProgress;
@@ -622,13 +671,13 @@ class GameOfLife {
         if (!stats) return;
         
         document.getElementById('peak-coverage').textContent = 
-            (stats.peak_cell_coverage * 100).toFixed(2) + '%';
+            (stats.peak_cell_coverage * 100).toFixed(1) + '%';
         document.getElementById('avg-coverage').textContent = 
-            (stats.avg_cell_coverage * 100).toFixed(2) + '%';
+            (stats.avg_cell_coverage * 100).toFixed(1) + '%';
         document.getElementById('peak-entropy').textContent = 
-            stats.peak_shannon_entropy.toFixed(3);
+            stats.peak_shannon_entropy.toFixed(2);
         document.getElementById('avg-entropy').textContent = 
-            stats.avg_shannon_entropy.toFixed(3);
+            stats.avg_shannon_entropy.toFixed(2);
     }
 
     updateUI() {
